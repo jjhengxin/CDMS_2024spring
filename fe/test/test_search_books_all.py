@@ -5,13 +5,10 @@ from fe.access import book
 import uuid
 import random
 
-
-
 class TestSearchBooksAll:
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self, str_len=2):
 
-        # 测试的时候要用已有的数据，已有的数据存在book里，不应该改动
         book_db = book.BookDB()
         self.books = book_db.get_book_info(0, book_db.get_book_count())
         self.json = {
@@ -25,11 +22,11 @@ class TestSearchBooksAll:
         }
         selected_book = random.choice(self.books)
         for i in ['title', 'author', 'publisher', 'isbn', 'content', 'tags', 'book_intro']:
-            # if getattr(selected_book, i) is not None:
-            text_length = len(getattr(selected_book, i))
-            if random.random() > 0.8 and text_length >= str_len:
-                start_index = random.randint(0, text_length - 2)
-                self.json[i] = getattr(selected_book, i)[start_index:start_index + 2]
+            if getattr(selected_book, i) is not None:
+                text_length = len(getattr(selected_book, i))
+                if random.random() > 0.8 and text_length >= str_len:
+                    start_index = random.randint(0, text_length - 2)
+                    self.json[i] = getattr(selected_book, i)[start_index:start_index + 2]
         yield
 
     def test_ok(self):
@@ -59,22 +56,23 @@ class TestSearchBooksAll:
         json_list = list(self.json.values())
 
         code, res = book.search_all(json_list[0], json_list[1], json_list[2], json_list[3], json_list[4],
-                                         json_list[5], json_list[6],1,100000000)
+                                         json_list[5], json_list[6],1,10000000)
         assert code == 200
+
         res = [i['id'] for i in res['data']]
-        print('搜索结果',len(res), res)
         right_answer = check_ok()
-        print('真实结果',len(right_answer), right_answer)
         assert len(right_answer) == len(res)
-        # check_ok()
+
         for i in res:
             if i not in right_answer:
-                assert False  # 搜索结果不正确
+                assert False  
 
-    # def test_simple(self):
-    #     pass
 
-if __name__ == "__main__":
-    t = TestSearchBooksAll()
-    t.pre_run_initialization()
-    t.test_ok()
+
+
+
+
+
+
+
+
