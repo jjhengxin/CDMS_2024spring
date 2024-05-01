@@ -7,99 +7,20 @@ from be.model import db_conn
 import base64
 
 class Book(db_conn.DBConn):
-    # ... 你现有的代码 ...
     def __init__(self):
         db_conn.DBConn.__init__(self)
 
-    def search_in_store_simple(self,store_id, query_str, page=1,per_page=10):
-        try:
-            store_collection = self.db["store"]
-            book_collection = self.db["book"]
-
-            query = {'store_id': store_id}
-            res = store_collection.find(query, {"book_id": 1, "_id": 0})
-            ids = []
-            for i in res:
-                ids += list(i.values())
-
-            query = {
-                "$and": [
-                            {"id": {"$in": ids}},
-                            {"$text": {"$search": query_str}}
-                        ]
-            }
-
-            # 计算分页参数
-            skip = (page - 1) * per_page
-            limit = per_page
-
-            # 使用 find 方法执行查询，并限制结果数量
-            result = book_collection.find(query, {'_id': 0}).skip(skip).limit(limit)
-            tmp = []
-            for i in result:
-                pics=[]
-                for picture in i['pictures']:
-                    encode_str = base64.b64encode(picture).decode("utf-8")
-                    pics.append(encode_str)
-                i['pictures'] = pics
-                # if len(i['pictures']) != 0:
-                #     picture = i['picture']
-                #     encode_str = base64.b64encode(picture).decode("utf-8")
-                #     i['picture'] = encode_str
-                tmp.append(i)
-            result = tmp
-
-        except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e))
-
-        except BaseException as e:
-            return 530, "{}".format(str(e))
-
-        return 200, result
-
-    def search_all_simple(self, query_str, page=1,per_page=10):
-        try:
-            book_collection = self.db["book"]
-
-            query = {"$text": {"$search": query_str}}
-
-
-            # 计算分页参数
-            skip = (page - 1) * per_page
-            limit = per_page
-
-            # 使用 find 方法执行查询，并限制结果数量
-            result = book_collection.find(query, {'_id': 0}).skip(skip).limit(limit)
-            tmp = []
-            for i in result:
-                pics=[]
-                for picture in i['pictures']:
-                    encode_str = base64.b64encode(picture).decode("utf-8")
-                    pics.append(encode_str)
-                i['pictures'] = pics
-                # if len(i['pictures']) != 0:
-                #     picture = i['picture']
-                #     encode_str = base64.b64encode(picture).decode("utf-8")
-                #     i['picture'] = encode_str
-                tmp.append(i)
-            result = tmp
-
-        except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e))
-
-        except BaseException as e:
-            return 530, "{}".format(str(e))
-
-        return 200, result
-
-
     def search_in_store(self, store_id, title, author, publisher, isbn, content, tags, book_intro, page=1, per_page=10):
         try:
+            if not self.store_id_exist(store_id):
+                return error.error_non_exist_store_id(store_id)
+            
             store_collection = self.db["store"]
             book_collection = self.db["book"]
 
             query = {'store_id': store_id}
             res = store_collection.find(query, {"book_id": 1, "_id": 0})
+            
             ids = []
             for i in res:
                 ids += list(i.values())
@@ -126,26 +47,31 @@ class Book(db_conn.DBConn):
                         ] + qs_list
             }
 
-            # 计算分页参数
             skip = (page - 1) * per_page
             limit = per_page
-            print(3)
-            # 使用 find 方法执行查询，并限制结果数量
-            result = book_collection.find(query, {'_id': 0}).skip(skip).limit(limit)
-            tmp = []
-            for i in result:
-                pics=[]
-                for picture in i['pictures']:
-                    encode_str = base64.b64encode(picture).decode("utf-8")
-                    pics.append(encode_str)
-                i['pictures'] = pics
-                # if len(i['pictures']) != 0:
-                #     picture = i['picture']
-                #     encode_str = base64.b64encode(picture).decode("utf-8")
-                #     i['picture'] = encode_str
-                tmp.append(i)
-            result = tmp
-            print(4)
+
+            cursor = book_collection.find(query, {'_id': 0}).skip(skip).limit(limit)
+            result = []
+            for doc in cursor:
+                book = {}
+                book['id'] = doc.get("id")
+                book['title'] = doc.get("title")
+                book['author'] = doc.get("author")
+                book['publisher'] = doc.get("publisher")
+                book['original_title'] = doc.get("original_title")
+                book['translator'] = doc.get("translator")
+                book['pub_year'] = doc.get("pub_year")
+                book['pages'] = doc.get("pages")
+                book['price'] = doc.get("price")
+                book['currency_unit'] = doc.get("currency_unit")
+                book['binding'] = doc.get("binding")
+                book['isbn'] = doc.get("isbn")
+                book['author_intro'] = doc.get("author_intro")
+                book['book_intro'] = doc.get("book_intro")
+                book['content'] = doc.get("content")
+                book['tags'] = doc.get("tags")
+
+                result.append(book)
 
         except pymongo.errors.PyMongoError as e:
             return 528, "{}".format(str(e))
@@ -180,25 +106,32 @@ class Book(db_conn.DBConn):
                 query = {
                     "$and": qs_list
                 }
-            # 计算分页参数
+
             skip = (page - 1) * per_page
             limit = per_page
 
-            # 使用 find 方法执行查询，并限制结果数量
-            result = book_collection.find(query, {'_id': 0}).skip(skip).limit(limit)
-            tmp = []
-            for i in result:
-                pics=[]
-                for picture in i['pictures']:
-                    encode_str = base64.b64encode(picture).decode("utf-8")
-                    pics.append(encode_str)
-                i['pictures'] = pics
-                # if len(i['pictures']) != 0:
-                #     picture = i['picture']
-                #     encode_str = base64.b64encode(picture).decode("utf-8")
-                #     i['picture'] = encode_str
-                tmp.append(i)
-            result = tmp
+            cursor = book_collection.find(query, {'_id': 0}).skip(skip).limit(limit)
+            result = []
+            for doc in cursor:
+                book = {}
+                book['id'] = doc.get("id")
+                book['title'] = doc.get("title")
+                book['author'] = doc.get("author")
+                book['publisher'] = doc.get("publisher")
+                book['original_title'] = doc.get("original_title")
+                book['translator'] = doc.get("translator")
+                book['pub_year'] = doc.get("pub_year")
+                book['pages'] = doc.get("pages")
+                book['price'] = doc.get("price")
+                book['currency_unit'] = doc.get("currency_unit")
+                book['binding'] = doc.get("binding")
+                book['isbn'] = doc.get("isbn")
+                book['author_intro'] = doc.get("author_intro")
+                book['book_intro'] = doc.get("book_intro")
+                book['content'] = doc.get("content")
+                book['tags'] = doc.get("tags")
+
+                result.append(book)
 
         except pymongo.errors.PyMongoError as e:
             return 528, "{}".format(str(e))
