@@ -44,29 +44,6 @@ def search_all():
     )
     return jsonify({"data": data}), code
 
-@bp_book.route("/search_in_store_simple", methods=["POST"])
-def search_in_store_simple():
 
-    store_id = request.json.get("store_id", "")
-    query_str = request.json.get("query_str","")
-    page= int(request.json.get("page", ""))
-    per_page = int(request.json.get("per_page", ""))
 
-    u = book.Book()
-    code, data = u.search_in_store_simple(
-        store_id,query_str,page,per_page
-    )
-    return jsonify({"data": data}), code
 
-@bp_book.route("/search_all_simple", methods=["POST"])
-def search_all_simple():
-
-    query_str = request.json.get("query_str","")
-    page= int(request.json.get("page", ""))
-    per_page = int(request.json.get("per_page", ""))
-
-    u = book.Book()
-    code, data = u.search_all_simple(
-        query_str,page,per_page
-    )
-    return jsonify({"data": data}), code
