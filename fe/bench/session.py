@@ -1,5 +1,5 @@
 from fe.bench.workload import Workload
-from fe.bench.workload import NewOrder
+from fe.bench.workload import ShipOrder,ReceiveOrder
 from fe.bench.workload import Payment
 import time
 import threading
@@ -11,12 +11,24 @@ class Session(threading.Thread):
         self.workload = wl
         self.new_order_request = []
         self.payment_request = []
+        self.shipment_request = []                 
+        self.receive_request = []
+        
         self.payment_i = 0
         self.new_order_i = 0
+        self.shipment_i = 0                    
+        self.receive_i = 0
+        
         self.payment_ok = 0
         self.new_order_ok = 0
+        self.shipment_ok = 0              
+        self.receive_ok = 0
+        
         self.time_new_order = 0
         self.time_payment = 0
+        self.time_shipment = 0                    
+        self.time_receive = 0
+        
         self.thread = None
         self.gen_procedure()
 
@@ -39,16 +51,21 @@ class Session(threading.Thread):
                 self.new_order_ok = self.new_order_ok + 1
                 payment = Payment(new_order.buyer, order_id)
                 self.payment_request.append(payment)
-            if self.new_order_i % 100 ==0 or self.new_order_i == len(
-                self.new_order_request
-            ):
+
+            if True:
                 self.workload.update_stat(
                     self.new_order_i,
                     self.payment_i,
+                    self.shipment_i,                         
+                    self.receive_i,
                     self.new_order_ok,
                     self.payment_ok,
+                    self.shipment_ok,                         
+                    self.receive_ok,
                     self.time_new_order,
                     self.time_payment,
+                    self.time_shipment,                       
+                    self.time_receive
                 )
                 for payment in self.payment_request:
                     before = time.time()
@@ -58,4 +75,29 @@ class Session(threading.Thread):
                     self.payment_i = self.payment_i + 1
                     if ok:
                         self.payment_ok = self.payment_ok + 1
+                        shipment = ShipOrder(new_order.store_id, order_id)     
+                        self.shipment_request.append(shipment)
+                        
+                for shipment in self.shipment_request:               
+                    before = time.time()
+                    ok = shipment.run()
+                    after = time.time()
+                    self.time_shipment = self.time_shipment + after - before
+                    self.shipment_i = self.shipment_i + 1
+                    if ok:
+                        self.shipment_ok = self.shipment_ok + 1
+                        receive = ReceiveOrder(new_order.buyer, order_id)
+                        self.receive_request.append(receive)
+
+                for receive in self.receive_request:                   
+                    before = time.time()
+                    ok = receive.run()
+                    after = time.time()
+                    self.time_receive = self.time_receive + after - before
+                    self.receive_i = self.receive_i + 1
+                    if ok:
+                        self.receive_ok = self.receive_ok + 1
+                        
                 self.payment_request = []
+                self.shipment_request = []                      
+                self.receive_request = []
