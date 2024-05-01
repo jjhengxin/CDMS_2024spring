@@ -10,7 +10,6 @@ class TestPassword:
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
         self.auth = auth.Auth(conf.URL)
-        # register a user
         self.user_id = "test_password_{}".format(str(uuid.uuid1()))
         self.old_password = "old_password_" + self.user_id
         self.new_password = "new_password_" + self.user_id
